@@ -100,16 +100,29 @@ jobs:
             -Dsonar.java.binaries=target/classes \
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
             -Dsonar.dependencyCheck.jsonReportPath=target/dependency-check-report.json \
-            -Dsonar.dependencyCheck.htmlReportPath=target/dependency-check-report.html
+            -Dsonar.dependencyCheck.htmlReportPath=target/dependency-check-report.html \
+            -Dsonar.verbose=true
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
+      - name: Check if report exists
+        run: |
+          if [ -f .scannerwork/report-task.txt ]; then
+            echo "Report file exists"
+            cat .scannerwork/report-task.txt
+          else
+            echo "Report file not found"
+            ls -la .scannerwork/
+          fi
+
       - name: Upload SonarQube Report
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: sonar-report
           path: .scannerwork/report-task.txt
+          if-no-files-found: error
 
   quality-gate:
     needs: sonarqube-analysis
