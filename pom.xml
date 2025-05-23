@@ -128,12 +128,11 @@
 	    <plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.7.6.201602180812</version>
+				<version>0.8.7</version>
 				<configuration>
-                                 <dataFile>${project.build.directory}/jacoco.exec</dataFile>
-                                 <outputDirectory>${project.reporting.outputDirectory}/jacoco</outputDirectory>
-                                 </configuration>
-
+                    <destFile>${project.build.directory}/coverage-reports/jacoco.exec</destFile>
+                    <dataFile>${project.build.directory}/coverage-reports/jacoco.exec</dataFile>
+                </configuration>
 				<executions>
 					<execution>
 						<id>prepare-agent</id>
@@ -141,6 +140,16 @@
 							<goal>prepare-agent</goal>
 						</goals>
 					</execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/site/jacoco</outputDirectory>
+                        </configuration>
+                    </execution>
 				</executions>
 	    </plugin>
         </plugins>

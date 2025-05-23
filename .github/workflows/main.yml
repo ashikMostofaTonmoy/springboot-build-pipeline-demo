@@ -47,8 +47,8 @@ jobs:
           distribution: "adopt"
 
       - name: Run Code Coverage
-        # run: mvn clean verify
-        run: mvn jacoco:report
+        run: |
+          mvn clean jacoco:prepare-agent test jacoco:report
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
@@ -85,7 +85,7 @@ jobs:
 
   sonarqube-analysis:
     # needs: [code-coverage, dependency-check]
-    needs: checkout
+    needs: code-coverage
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
