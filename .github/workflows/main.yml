@@ -34,7 +34,8 @@ jobs:
         run: mvn clean package
 
   code-coverage:
-    needs: build
+    # needs: build
+    needs: checkout
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -84,8 +85,8 @@ jobs:
           if-no-files-found: error
 
   sonarqube-analysis:
-    # needs: [code-coverage, dependency-check]
-    needs: code-coverage
+    needs: [code-coverage, dependency-check]
+    # needs: code-coverage
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
