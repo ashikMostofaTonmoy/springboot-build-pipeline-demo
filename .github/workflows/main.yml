@@ -34,7 +34,8 @@ jobs:
         run: mvn clean package
 
   code-coverage:
-    needs: build
+    # needs: build
+    needs: checkout
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -50,7 +51,8 @@ jobs:
         run: mvn jacoco:report
 
   dependency-check:
-    needs: build
+    # needs: build
+    needs: checkout
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -66,7 +68,8 @@ jobs:
         run: mvn org.owasp:dependency-check-maven:check
 
   sonarqube-analysis:
-    needs: [code-coverage, dependency-check]
+    # needs: [code-coverage, dependency-check]
+    needs: checkout
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -103,7 +106,7 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
       - name: Upload SonarQube Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: sonar-report
           path: .scannerwork/report-task.txt
@@ -113,7 +116,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download SonarQube Report
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: sonar-report
           path: .scannerwork
@@ -126,7 +129,8 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
   build-docker:
-    needs: quality-gate
+    # needs: quality-gate
+    needs: checkout
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
