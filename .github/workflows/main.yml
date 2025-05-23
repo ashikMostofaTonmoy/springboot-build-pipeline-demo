@@ -91,20 +91,21 @@ jobs:
           distribution: 'adopt'
 
       - name: Run SonarQube Analysis
-        run: |
-          mvn sonar:sonar \
-            -Dsonar.projectKey=springboot_build \
-            -Dsonar.projectName=springboot_build \
-            -Dsonar.projectVersion=1.0 \
-            -Dsonar.sources=src/main/java \
-            -Dsonar.java.binaries=target/classes \
-            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
-            -Dsonar.dependencyCheck.jsonReportPath=target/dependency-check-report.json \
-            -Dsonar.dependencyCheck.htmlReportPath=target/dependency-check-report.html \
-            -Dsonar.verbose=true
+        uses: SonarSource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        with:
+          args: >
+            -Dsonar.projectKey=springboot_build
+            -Dsonar.projectName=springboot_build
+            -Dsonar.projectVersion=1.0
+            -Dsonar.sources=src/main/java
+            -Dsonar.java.binaries=target/classes
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+            -Dsonar.dependencyCheck.jsonReportPath=target/dependency-check-report.json
+            -Dsonar.dependencyCheck.htmlReportPath=target/dependency-check-report.html
+            -Dsonar.verbose=true
 
       - name: Check if report exists
         run: |
@@ -149,15 +150,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Build and Push Docker image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          push: true
-          tags: ${{ env.REGISTRY }}:latest
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Login to Docker Hub
+        run: |
+          echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ env.REGISTRY }}:latest .
+          docker tag ${{ env.REGISTRY }}:latest ${{ env.REGISTRY }}:$(date +'%Y%m%d_%H%M%S')
+
+      - name: Push Docker image
+        run: |
+          docker push ${{ env.REGISTRY }}:latest
+          docker push ${{ env.REGISTRY }}:$(date +'%Y%m%d_%H%M%S')
 
   scan-image:
     needs: build-docker
