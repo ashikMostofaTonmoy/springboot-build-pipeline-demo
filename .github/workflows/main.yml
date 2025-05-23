@@ -86,6 +86,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'adopt'
+
       - name: Run SonarQube Analysis
         run: |
           mvn sonar:sonar \
@@ -101,10 +102,22 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
+      - name: Upload SonarQube Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: sonar-report
+          path: .scannerwork/report-task.txt
+
   quality-gate:
     needs: sonarqube-analysis
     runs-on: ubuntu-latest
     steps:
+      - name: Download SonarQube Report
+        uses: actions/download-artifact@v3
+        with:
+          name: sonar-report
+          path: .scannerwork
+
       - name: Check SonarQube Quality Gate
         uses: sonarsource/sonarqube-quality-gate-action@master
         timeout-minutes: 5
