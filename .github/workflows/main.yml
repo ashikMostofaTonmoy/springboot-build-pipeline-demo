@@ -173,47 +173,22 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.REGISTRY }}:latest
-          format: 'sarif'
+          format: 'table'
           exit-code: '0'
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
-          output: 'trivy-results.sarif'
+          output: 'trivy-results.txt'
 
-      - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v2
-        if: always()
-        with:
-          sarif_file: 'trivy-results.sarif'
-          category: 'Docker Image Scan'
-
-      - name: Display Trivy Results Summary
+      - name: Check scan results
         if: always()
         run: |
-          echo "## 🔍 Docker Image Security Scan Results" >> $GITHUB_STEP_SUMMARY
-          echo "### Image: \`${{ env.REGISTRY }}:latest\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          
-          if [ -f trivy-results.sarif ]; then
-            echo "#### 📊 Scan Summary" >> $GITHUB_STEP_SUMMARY
-            echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
-            echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
-            
-            # Count vulnerabilities by severity
-            CRITICAL=$(grep -c '"level": "error"' trivy-results.sarif || echo "0")
-            HIGH=$(grep -c '"level": "warning"' trivy-results.sarif || echo "0")
-            
-            echo "| 🔴 Critical | $CRITICAL |" >> $GITHUB_STEP_SUMMARY
-            echo "| 🟡 High | $HIGH |" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            
-            if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
-              echo "⚠️ **Vulnerabilities found!** Please review the detailed results in the Security tab." >> $GITHUB_STEP_SUMMARY
-            else
-              echo "✅ **No critical or high vulnerabilities found.**" >> $GITHUB_STEP_SUMMARY
-            fi
+          if [ -f trivy-results.txt ]; then
+            echo "Vulnerability scan results:"
+            cat trivy-results.txt
+            echo "::warning::Vulnerabilities found in Docker image. Please review the scan results."
           else
-            echo "❌ **Scan results not available**" >> $GITHUB_STEP_SUMMARY
+            echo "No scan results found"
           fi
 
   smoke-test:
