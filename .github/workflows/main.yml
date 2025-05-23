@@ -11,7 +11,14 @@ env:
   JAVA_HOME: /usr/lib/jvm/java-8-openjdk-amd64
 
 jobs:
-  build-and-test:
+  checkout:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+  build:
+    needs: checkout
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -26,11 +33,50 @@ jobs:
       - name: Build with Maven
         run: mvn clean package
 
+  code-coverage:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v3
+        with:
+          java-version: '8'
+          distribution: 'adopt'
+
       - name: Run Code Coverage
         run: mvn jacoco:report
 
+  dependency-check:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v3
+        with:
+          java-version: '8'
+          distribution: 'adopt'
+
       - name: Run OWASP Dependency Check
         run: mvn org.owasp:dependency-check-maven:check
+
+  sonarqube-analysis:
+    needs: [code-coverage, dependency-check]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v3
+        with:
+          java-version: '8'
+          distribution: 'adopt'
 
       - name: Run SonarQube Analysis
         run: |
@@ -43,6 +89,13 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
+  build-docker:
+    needs: sonarqube-analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       - name: Build and Push Docker image
         uses: docker/build-push-action@v4
         with:
@@ -53,6 +106,10 @@ jobs:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
+  scan-image:
+    needs: build-docker
+    runs-on: ubuntu-latest
+    steps:
       - name: Scan Docker image with Trivy
         uses: aquasecurity/trivy-action@master
         with:
@@ -63,6 +120,10 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
 
+  smoke-test:
+    needs: scan-image
+    runs-on: ubuntu-latest
+    steps:
       - name: Smoke Test
         run: |
           docker run -d --name smokerun -p 8080:8080 ${{ env.REGISTRY }}:latest
