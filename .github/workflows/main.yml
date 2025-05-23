@@ -157,12 +157,12 @@ jobs:
       - name: Build Docker image
         run: |
           docker build -t ${{ env.REGISTRY }}:latest .
-          docker tag ${{ env.REGISTRY }}:latest ${{ env.REGISTRY }}:$(date +'%Y%m%d_%H%M%S')
+          docker tag ${{ env.REGISTRY }}:latest ${{ env.REGISTRY }}:${{ github.run_id }}
 
       - name: Push Docker image
         run: |
           docker push ${{ env.REGISTRY }}:latest
-          docker push ${{ env.REGISTRY }}:$(date +'%Y%m%d_%H%M%S')
+          docker push ${{ env.REGISTRY }}:${{ github.run_id }}
 
   scan-image:
     needs: build-docker
