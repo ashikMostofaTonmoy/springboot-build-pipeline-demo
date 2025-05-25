@@ -64,7 +64,7 @@ jobs:
           apiKey: ${{ secrets.OWASP_DTRACK_KEY }}
           projectName: springboot-build-pipeline"
           projectVersion: "main"
-          bomFilename: "bom.json"
+          bomFilename: "bom.xml"
           autoCreate: true
   code-coverage:
     # needs: build
