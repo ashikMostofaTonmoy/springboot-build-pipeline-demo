@@ -248,29 +248,47 @@ jobs:
     needs: build-docker
     runs-on: ubuntu-latest
     steps:
-      - name: Scan Docker image with Trivy
-        id: trivy-scan
+      # - name: Scan Docker image with Trivy
+      #   id: trivy-scan
+      #   uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: ${{ env.REGISTRY }}:latest
+      #     format: "table"
+      #     exit-code: "0"
+      #     ignore-unfixed: true
+      #     vuln-type: "os,library"
+      #     severity: "CRITICAL,HIGH"
+      #     output: "trivy-results.txt"
+
+      # - name: Check scan results
+      #   if: always()
+      #   run: |
+      #     if [ -f trivy-results.txt ]; then
+      #       echo "Vulnerability scan results:"
+      #       cat trivy-results.txt
+      #       echo "::warning::Vulnerabilities found in Docker image. Please review the scan results."
+      #     else
+      #       echo "No scan results found"
+      #     fi
+      - name: Generate SBOM & scan with Trivy
         uses: aquasecurity/trivy-action@master
         with:
+          scan-type: "image"
           image-ref: ${{ env.REGISTRY }}:latest
-          format: "table"
+          scanners: "vuln,secret,misconfig,license"
           exit-code: "0"
-          ignore-unfixed: true
-          vuln-type: "os,library"
-          severity: "CRITICAL,HIGH"
-          output: "trivy-results.txt"
+          format: "cyclonedx"
+          output: "sbom.json"
+          ignore-unfixed: false
 
-      - name: Check scan results
-        if: always()
-        run: |
-          if [ -f trivy-results.txt ]; then
-            echo "Vulnerability scan results:"
-            cat trivy-results.txt
-            echo "::warning::Vulnerabilities found in Docker image. Please review the scan results."
-          else
-            echo "No scan results found"
-          fi
-
+      - uses: DependencyTrack/gh-upload-sbom@v3
+        with:
+          serverHostname: "${{ vars.OWASP_DTRACK_HOST_URL }}"
+          apiKey: ${{ secrets.OWASP_DTRACK_KEY }}
+          projectName: springboot-build-pipeline"
+          projectVersion: "main"
+          bomFilename: "sbom.json"
+          autoCreate: true
   smoke-test:
     needs: scan-image
     runs-on: ubuntu-latest
