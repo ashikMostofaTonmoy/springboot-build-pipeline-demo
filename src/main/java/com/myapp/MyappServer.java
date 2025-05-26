@@ -45,7 +45,7 @@ public class MyappServer extends WebMvcConfigurerAdapter
 
     private ApiInfo generateApiInfo()
     {
-        return new ApiInfo("WEZVATECH DEVSECOPS SAMPLE PROJECT", "This is a sample project for Devsecops CICD pipeline.", "Version 1.0 - mw",
+        return new ApiInfo("OSTAD DEVSECOPS SAMPLE PROJECT", "This is a sample project for Devsecops CICD pipeline.", "Version 1.0 - mw",
             "urn:tos", "ADAM@9739110917", "Apache 2.0", "http://www.apache.org/licenses/LICENSE-2.0");
     }
 }
