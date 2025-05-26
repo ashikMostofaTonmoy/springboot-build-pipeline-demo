@@ -292,13 +292,22 @@ jobs:
           else
             echo "No scan results found"
           fi
+      - name: Download CycloneDX CLI
+        run: |
+          curl -sL https://github.com/CycloneDX/cyclonedx-cli/releases/download/v0.27.2/cyclonedx-linux-x64 -o cyclonedx
+          chmod +x cyclonedx
+          sudo cp cyclonedx /usr/local/bin/cyclonedx
+
+      - name: Convert CycloneDX JSON → XML
+        run: |
+          cyclonedx convert --input-file sbom.json --input-format json --output-file sbom.xml --output-format xml
       - uses: DependencyTrack/gh-upload-sbom@v3
         with:
           serverHostname: "${{ vars.OWASP_DTRACK_HOST_URL }}"
           apiKey: ${{ secrets.OWASP_DTRACK_KEY }}
           projectName: springboot-build-pipeline"
           projectVersion: "latest"
-          bomFilename: "sbom.json"
+          bomFilename: "sbom.xml"
           autoCreate: true
   smoke-test:
     needs: scan-image
