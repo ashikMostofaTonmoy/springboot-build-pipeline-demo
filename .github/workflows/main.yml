@@ -63,7 +63,7 @@ jobs:
           serverHostname: "${{ vars.OWASP_DTRACK_HOST_URL }}"
           apiKey: ${{ secrets.OWASP_DTRACK_KEY }}
           projectName: springboot-build-pipeline"
-          projectVersion: "latest"
+          projectVersion: "main"
           bomFilename: "bom.json"
           autoCreate: true
   # code-coverage:
@@ -286,6 +286,7 @@ jobs:
         run: |
           if [ -f sbom.json ]; then
             echo "Vulnerability scan results:"
+            du -h sbom.json
             # cat sbom.json
             echo "::warning::Vulnerabilities found in Docker image. Please review the scan results."
           else
@@ -296,7 +297,7 @@ jobs:
           serverHostname: "${{ vars.OWASP_DTRACK_HOST_URL }}"
           apiKey: ${{ secrets.OWASP_DTRACK_KEY }}
           projectName: springboot-build-pipeline"
-          projectVersion: "main"
+          projectVersion: "latest"
           bomFilename: "sbom.json"
           autoCreate: true
   smoke-test:
