@@ -281,6 +281,16 @@ jobs:
           output: "sbom.json"
           ignore-unfixed: false
 
+      - name: Check scan results
+        if: always()
+        run: |
+          if [ -f trivy-results.txt ]; then
+            echo "Vulnerability scan results:"
+            cat trivy-results.txt
+            echo "::warning::Vulnerabilities found in Docker image. Please review the scan results."
+          else
+            echo "No scan results found"
+          fi
       - uses: DependencyTrack/gh-upload-sbom@v3
         with:
           serverHostname: "${{ vars.OWASP_DTRACK_HOST_URL }}"
