@@ -63,7 +63,7 @@ jobs:
           serverHostname: "${{ vars.OWASP_DTRACK_HOST_URL }}"
           apiKey: ${{ secrets.OWASP_DTRACK_KEY }}
           projectName: springboot-build-pipeline"
-          projectVersion: "main"
+          projectVersion: "${{ github.sha }}"
           bomFilename: "bom.json"
           autoCreate: true
   # code-coverage:
@@ -237,12 +237,12 @@ jobs:
       - name: Build Docker image
         run: |
           docker build -t ${{ env.REGISTRY }}:latest .
-          docker tag ${{ env.REGISTRY }}:latest ${{ env.REGISTRY }}:${{ github.run_id }}
+          docker tag ${{ env.REGISTRY }}:latest ${{ env.REGISTRY }}:${{ github.sha }}
 
       - name: Push Docker image
         run: |
           docker push ${{ env.REGISTRY }}:latest
-          docker push ${{ env.REGISTRY }}:${{ github.run_id }}
+          docker push ${{ env.REGISTRY }}:${{ github.sha }}
 
   scan-image:
     needs: build-docker
@@ -292,22 +292,23 @@ jobs:
           else
             echo "No scan results found"
           fi
-      - name: Download CycloneDX CLI
-        run: |
-          curl -sL https://github.com/CycloneDX/cyclonedx-cli/releases/download/v0.27.2/cyclonedx-linux-x64 -o cyclonedx
-          chmod +x cyclonedx
-          sudo cp cyclonedx /usr/local/bin/cyclonedx
+      # - name: Download CycloneDX CLI
+      #   run: |
+      #     curl -sL https://github.com/CycloneDX/cyclonedx-cli/releases/download/v0.27.2/cyclonedx-linux-x64 -o cyclonedx
+      #     chmod +x cyclonedx
+      #     sudo cp cyclonedx /usr/local/bin/cyclonedx
 
-      - name: Convert CycloneDX JSON → XML
-        run: |
-          cyclonedx convert --input-file sbom.json --input-format json --output-file sbom.xml --output-format xml
+      # - name: Convert CycloneDX JSON → XML
+      #   run: |
+      #     cyclonedx convert --input-file sbom.json --input-format json --output-file sbom.xml --output-format xml
+      #     du -h sbom.xml
       - uses: DependencyTrack/gh-upload-sbom@v3
         with:
           serverHostname: "${{ vars.OWASP_DTRACK_HOST_URL }}"
           apiKey: ${{ secrets.OWASP_DTRACK_KEY }}
           projectName: springboot-build-pipeline"
-          projectVersion: "latest"
-          bomFilename: "sbom.xml"
+          projectVersion: "${{ github.sha }}"
+          bomFilename: "sbom.json"
           autoCreate: true
   smoke-test:
     needs: scan-image
