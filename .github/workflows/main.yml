@@ -63,7 +63,7 @@ jobs:
           serverHostname: "${{ vars.OWASP_DTRACK_HOST_URL }}"
           apiKey: ${{ secrets.OWASP_DTRACK_KEY }}
           projectName: springboot-build-pipeline"
-          projectVersion: "main"
+          projectVersion: "latest"
           bomFilename: "bom.json"
           autoCreate: true
   # code-coverage:
