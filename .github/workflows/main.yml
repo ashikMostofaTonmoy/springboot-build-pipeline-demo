@@ -20,10 +20,8 @@ jobs:
           fetch-depth: 0 # Fetch full history for better scanning
 
       - name: Run Gitleaks
-        uses: docker://zricethezav/gitleaks:latest
-        with:
-          args: detect --verbose --source .
-        continue-on-error: true # Equivalent to allow_failure: true
+        uses: gitleaks/gitleaks-action@v2
+        continue-on-error: true # if you want to allow failures
 
 
   # build:
