@@ -60,144 +60,141 @@ jobs:
           projectVersion: "${{ github.sha }}-app"
           bomFilename: "bom.json"
           autoCreate: true
-#   code-coverage:
-#     needs: build
-#     # needs: checkout
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v3
+  code-coverage:
+    needs: build
+    # needs: checkout
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-#       - name: Set up JDK 8
-#         uses: actions/setup-java@v3
-#         with:
-#           java-version: "8"
-#           distribution: "adopt"
+      - name: Set up JDK 8
+        uses: actions/setup-java@v3
+        with:
+          java-version: "8"
+          distribution: "adopt"
 
-#       - name: Run Code Coverage
-#         run: |
-#           mvn clean jacoco:prepare-agent test jacoco:report
+      - name: Run Code Coverage
+        run: |
+          mvn clean jacoco:prepare-agent test jacoco:report
 
-#       - name: Upload coverage report
-#         uses: actions/upload-artifact@v4
-#         with:
-#           name: coverage-report
-#           path: target/site/jacoco/
-#           if-no-files-found: error
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: target/site/jacoco/
+          if-no-files-found: error
+  dependency-check:
+    needs: build
+    # needs: checkout
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-#   dependency-check:
-#     needs: build
-#     # needs: checkout
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v3
+      - name: Set up JDK 8
+        uses: actions/setup-java@v3
+        with:
+          java-version: "8"
+          distribution: "adopt"
 
-#       - name: Set up JDK 8
-#         uses: actions/setup-java@v3
-#         with:
-#           java-version: "8"
-#           distribution: "adopt"
+      - name: Run OWASP Dependency Check
+        run: mvn org.owasp:dependency-check-maven:check
 
-#       - name: Run OWASP Dependency Check
-#         run: mvn org.owasp:dependency-check-maven:check
+      - name: Upload dependency check report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: |
+            target/dependency-check-report.json
+            target/dependency-check-report.html
+          if-no-files-found: error
 
-#       - name: Upload dependency check report
-#         uses: actions/upload-artifact@v4
-#         with:
-#           name: dependency-check-report
-#           path: |
-#             target/dependency-check-report.json
-#             target/dependency-check-report.html
-#           if-no-files-found: error
+  sonarqube-analysis:
+    needs: [code-coverage, dependency-check, dependency-track]
+    # needs: code-coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-#   sonarqube-analysis:
-#     needs: [code-coverage, dependency-check, dependency-track]
-#     # needs: code-coverage
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v3
+      - name: Set up JDK 8
+        uses: actions/setup-java@v3
+        with:
+          java-version: "8"
+          distribution: "adopt"
+      - name: Build with Maven
+        run: mvn clean package
+      - name: Download coverage report
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+          path: target/site/jacoco
 
-#       - name: Set up JDK 8
-#         uses: actions/setup-java@v3
-#         with:
-#           java-version: "8"
-#           distribution: "adopt"
-#       - name: Build with Maven
-#         run: mvn clean package
-#       - name: Download coverage report
-#         uses: actions/download-artifact@v4
-#         with:
-#           name: coverage-report
-#           path: target/site/jacoco
+      - name: Download dependency check report
+        uses: actions/download-artifact@v4
+        with:
+          name: dependency-check-report
+          path: target
 
-#       - name: Download dependency check report
-#         uses: actions/download-artifact@v4
-#         with:
-#           name: dependency-check-report
-#           path: target
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: "17"
+          distribution: "adopt"
 
-#       - name: Set up JDK 17
-#         uses: actions/setup-java@v3
-#         with:
-#           java-version: "17"
-#           distribution: "adopt"
+      - name: Run SonarQube Analysis
+        uses: SonarSource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+        with:
+          args: >
+            -Dsonar.projectKey=springboot-project
+            -Dsonar.projectName=springboot-project
+            -Dsonar.projectVersion=1.0
+            -Dsonar.sources=src/main/java
+            -Dsonar.tests=src/test/java
+            -Dsonar.java.binaries=target/classes
+            -Dsonar.java.test.binaries=target/test-classes
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+            -Dsonar.dependencyCheck.jsonReportPath=target/dependency-check-report.json
+            -Dsonar.dependencyCheck.htmlReportPath=target/dependency-check-report.html
+            -Dsonar.verbose=true
 
-#       - name: Run SonarQube Analysis
-#         uses: SonarSource/sonarqube-scan-action@master
-#         env:
-#           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-#           SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
-#         with:
-#           args: >
-#             -Dsonar.projectKey=springboot-project
-#             -Dsonar.projectName=springboot-project
-#             -Dsonar.projectVersion=1.0
-#             -Dsonar.sources=src/main/java
-#             -Dsonar.tests=src/test/java
-#             -Dsonar.java.binaries=target/classes
-#             -Dsonar.java.test.binaries=target/test-classes
-#             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-#             -Dsonar.dependencyCheck.jsonReportPath=target/dependency-check-report.json
-#             -Dsonar.dependencyCheck.htmlReportPath=target/dependency-check-report.html
-#             -Dsonar.verbose=true
+      - name: Check if report exists
+        run: |
+          if [ -f .scannerwork/report-task.txt ]; then
+            echo "Report file exists"
+            cat .scannerwork/report-task.txt
+          else
+            echo "Report file not found"
+            ls -la .scannerwork/
+          fi
 
-#       - name: Check if report exists
-#         run: |
-#           if [ -f .scannerwork/report-task.txt ]; then
-#             echo "Report file exists"
-#             cat .scannerwork/report-task.txt
-#           else
-#             echo "Report file not found"
-#             ls -la .scannerwork/
-#           fi
+      - name: Upload SonarQube Report
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sonar-report
+          path: .scannerwork/report-task.txt
+          if-no-files-found: error
+  quality-gate:
+    needs: sonarqube-analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download SonarQube Report
+        uses: actions/download-artifact@v4
+        with:
+          name: sonar-report
+          path: .scannerwork
 
-#       - name: Upload SonarQube Report
-#         if: success()
-#         uses: actions/upload-artifact@v4
-#         with:
-#           name: sonar-report
-#           path: .scannerwork/report-task.txt
-#           if-no-files-found: error
-
-#   quality-gate:
-#     needs: sonarqube-analysis
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Download SonarQube Report
-#         uses: actions/download-artifact@v4
-#         with:
-#           name: sonar-report
-#           path: .scannerwork
-
-#       - name: Check SonarQube Quality Gate
-#         uses: sonarsource/sonarqube-quality-gate-action@master
-#         timeout-minutes: 5
-#         env:
-#           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-#           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-
+      - name: Check SonarQube Quality Gate
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 #   build-docker:
 #     needs: quality-gate
 #     # needs: checkout
