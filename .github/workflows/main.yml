@@ -7,7 +7,7 @@ on:
 #     branches: [main]
 
 env:
-  REGISTRY: tonmoyflagship/demo-repository
+  REGISTRY: ashikmostofatonmoy/springboot-demo
   JAVA_HOME: /usr/lib/jvm/java-8-openjdk-amd64
 
 jobs:
@@ -85,8 +85,8 @@ jobs:
           path: target/site/jacoco/
           if-no-files-found: error
   dependency-check:
-    needs: build
-    # needs: checkout
+    # needs: build
+    needs: checkout
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -195,97 +195,97 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-#   build-docker:
-#     needs: quality-gate
-#     # needs: checkout
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v3
+  build-docker:
+    needs: quality-gate
+    # needs: checkout
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-#       - name: Login to Docker Hub
-#         run: |
-#           echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+      - name: Login to Docker Hub
+        run: |
+          echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
 
-#       - name: Build Docker image
-#         run: |
-#           docker build -t ${{ env.REGISTRY }}:latest .
-#           docker tag ${{ env.REGISTRY }}:latest ${{ env.REGISTRY }}:${{ github.sha }}
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ env.REGISTRY }}:latest .
+          docker tag ${{ env.REGISTRY }}:latest ${{ env.REGISTRY }}:${{ github.sha }}
 
-#       - name: Push Docker image
-#         run: |
-#           docker push ${{ env.REGISTRY }}:latest
-#           docker push ${{ env.REGISTRY }}:${{ github.sha }}
+      - name: Push Docker image
+        run: |
+          docker push ${{ env.REGISTRY }}:latest
+          docker push ${{ env.REGISTRY }}:${{ github.sha }}
 
-#   scan-image:
-#     needs: build-docker
-#     runs-on: ubuntu-latest
-#     steps:
-#       # - name: Scan Docker image with Trivy
-#       #   id: trivy-scan
-#       #   uses: aquasecurity/trivy-action@master
-#       #   with:
-#       #     image-ref: ${{ env.REGISTRY }}:latest
-#       #     format: "table"
-#       #     exit-code: "0"
-#       #     ignore-unfixed: true
-#       #     vuln-type: "os,library"
-#       #     severity: "CRITICAL,HIGH"
-#       #     output: "trivy-results.txt"
+  scan-image:
+    needs: build-docker
+    runs-on: ubuntu-latest
+    steps:
+      # - name: Scan Docker image with Trivy
+      #   id: trivy-scan
+      #   uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: ${{ env.REGISTRY }}:latest
+      #     format: "table"
+      #     exit-code: "0"
+      #     ignore-unfixed: true
+      #     vuln-type: "os,library"
+      #     severity: "CRITICAL,HIGH"
+      #     output: "trivy-results.txt"
 
-#       # - name: Check scan results
-#       #   if: always()
-#       #   run: |
-#       #     if [ -f trivy-results.txt ]; then
-#       #       echo "Vulnerability scan results:"
-#       #       cat trivy-results.txt
-#       #       echo "::warning::Vulnerabilities found in Docker image. Please review the scan results."
-#       #     else
-#       #       echo "No scan results found"
-#       #     fi
-#       - name: Generate SBOM & scan with Trivy
-#         uses: aquasecurity/trivy-action@master
-#         with:
-#           scan-type: "image"
-#           image-ref: ${{ env.REGISTRY }}:latest
-#           scanners: "vuln,secret,misconfig,license"
-#           exit-code: "0"
-#           format: "cyclonedx"
-#           output: "sbom.json"
-#           ignore-unfixed: false
+      # - name: Check scan results
+      #   if: always()
+      #   run: |
+      #     if [ -f trivy-results.txt ]; then
+      #       echo "Vulnerability scan results:"
+      #       cat trivy-results.txt
+      #       echo "::warning::Vulnerabilities found in Docker image. Please review the scan results."
+      #     else
+      #       echo "No scan results found"
+      #     fi
+      - name: Generate SBOM & scan with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "image"
+          image-ref: ${{ env.REGISTRY }}:latest
+          scanners: "vuln,secret,misconfig,license"
+          exit-code: "0"
+          format: "cyclonedx"
+          output: "sbom.json"
+          ignore-unfixed: false
 
-#       - name: Check scan results
-#         if: always()
-#         run: |
-#           if [ -f sbom.json ]; then
-#             echo "Vulnerability scan results:"
-#             du -h sbom.json
-#             # cat sbom.json
-#             echo "::warning::Vulnerabilities found in Docker image. Please review the scan results."
-#           else
-#             echo "No scan results found"
-#           fi
+      - name: Check scan results
+        if: always()
+        run: |
+          if [ -f sbom.json ]; then
+            echo "Vulnerability scan results:"
+            du -h sbom.json
+            # cat sbom.json
+            echo "::warning::Vulnerabilities found in Docker image. Please review the scan results."
+          else
+            echo "No scan results found"
+          fi
 
-#       - uses: DependencyTrack/gh-upload-sbom@v3
-#         with:
-#           serverHostname: "${{ vars.OWASP_DTRACK_HOST_URL }}"
-#           apiKey: ${{ secrets.OWASP_DTRACK_KEY }}
-#           projectName: springboot-build-pipeline"
-#           projectVersion: "${{ github.sha }}"
-#           bomFilename: "sbom.json"
-#           autoCreate: true
-#   smoke-test:
-#     needs: scan-image
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v3
-#       - name: Smoke Test
-#         run: |
-#           docker run -d --name smokerun -p 8080:8080 ${{ env.REGISTRY }}:latest
-#           sleep 90
-#           ./check.sh
-#           docker rm --force smokerun
+      - uses: DependencyTrack/gh-upload-sbom@v3
+        with:
+          serverHostname: "${{ vars.OWASP_DTRACK_HOST_URL }}"
+          apiKey: ${{ secrets.OWASP_DTRACK_KEY }}
+          projectName: springboot-build-pipeline"
+          projectVersion: "${{ github.sha }}"
+          bomFilename: "sbom.json"
+          autoCreate: true
+  smoke-test:
+    needs: scan-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Smoke Test
+        run: |
+          docker run -d --name smokerun -p 8080:8080 ${{ env.REGISTRY }}:latest
+          sleep 90
+          ./check.sh
+          docker rm --force smokerun
 
 # #   deploy:
 # #     needs: smoke-test
