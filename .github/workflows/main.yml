@@ -195,27 +195,27 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-#   build-docker:
-#     needs: quality-gate
-#     # needs: checkout
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v3
+  build-docker:
+    needs: quality-gate
+    # needs: checkout
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-#       - name: Login to Docker Hub
-#         run: |
-#           echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+      - name: Login to Docker Hub
+        run: |
+          echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
 
-#       - name: Build Docker image
-#         run: |
-#           docker build -t ${{ env.REGISTRY }}:latest .
-#           docker tag ${{ env.REGISTRY }}:latest ${{ env.REGISTRY }}:${{ github.sha }}
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ env.REGISTRY }}:latest .
+          docker tag ${{ env.REGISTRY }}:latest ${{ env.REGISTRY }}:${{ github.sha }}
 
-#       - name: Push Docker image
-#         run: |
-#           docker push ${{ env.REGISTRY }}:latest
-#           docker push ${{ env.REGISTRY }}:${{ github.sha }}
+      - name: Push Docker image
+        run: |
+          docker push ${{ env.REGISTRY }}:latest
+          docker push ${{ env.REGISTRY }}:${{ github.sha }}
 
 #   scan-image:
 #     needs: build-docker
