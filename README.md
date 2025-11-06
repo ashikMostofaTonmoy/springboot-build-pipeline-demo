@@ -44,3 +44,7 @@ $ sudo docker run -d --name sonar -p 9000:9000 sonarqube:lts-community
 
 
 # some changes  for demo
+
+```sh
+docker pull zricethezav/gitleaks:latest
+docker run --rm -v "D:\Tonmoy\ostad\springboot-build-pipeline-demo:/path" zricethezav/gitleaks:latest detect --source="/path" --verbose
