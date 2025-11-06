@@ -61,8 +61,8 @@ jobs:
           bomFilename: "bom.json"
           autoCreate: true
   code-coverage:
-    needs: build
-    # needs: checkout
+    # needs: build
+    needs: checkout
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
