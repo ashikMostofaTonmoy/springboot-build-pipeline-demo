@@ -45,6 +45,11 @@ $ sudo docker run -d --name sonar -p 9000:9000 sonarqube:lts-community
 
 # some changes  for demo
 
+# Pre commit hook
+vi .git/hooks/pre-commit-gitleaks
+chmod +x .git/hooks/pre-commit-gitleaks
+on Linux or wsl
+
 ```sh
 docker pull zricethezav/gitleaks:latest
 docker run --rm -v "D:\Tonmoy\ostad\springboot-build-pipeline-demo:/path" zricethezav/gitleaks:latest detect --source="/path" --verbose
@@ -57,3 +62,15 @@ for linux
 docker pull zricethezav/gitleaks:latest
 docker run --rm -v "/mnt/d/Tonmoy/ostad/springboot-build-pipeline-demo:/path" zricethezav/gitleaks:latest detect --source="/path" --verbose
 ```
+```sh
+docker pull zricethezav/gitleaks:latest
+export path_to_host_folder_to_scan="/mnt/d/Tonmoy/ostad/security/springboot-build-pipeline"
+docker run --rm -v ${path_to_host_folder_to_scan}:/path zricethezav/gitleaks:latest detect --source="/path" --verbose
+```
+
+on windows
+```sh
+docker pull zricethezav/gitleaks:latest
+docker run --rm -v "D:\Tonmoy\ostad\security\springboot-build-pipeline:/path" zricethezav/gitleaks:latest detect --source="/path" --verbose
+```
+
