@@ -74,3 +74,4 @@ docker pull zricethezav/gitleaks:latest
 docker run --rm -v "D:\Tonmoy\ostad\security\springboot-build-pipeline:/path" zricethezav/gitleaks:latest detect --source="/path" --verbose
 ```
 
+
