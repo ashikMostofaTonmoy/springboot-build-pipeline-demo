@@ -283,23 +283,23 @@ jobs:
           sleep 90
           ./check.sh
           docker rm --force smokerun
-  # # #   deploy:
-  # # #     needs: smoke-test
-  # # #     runs-on: self-hosted
-  # # #     steps:
-  # # #       - name: Checkout code
-  # # #         uses: actions/checkout@v3
+  # #   deploy:
+  # #     needs: smoke-test
+  # #     runs-on: self-hosted
+  # #     steps:
+  # #       - name: Checkout code
+  # #         uses: actions/checkout@v3
 
-  # # #       - name: Login to Docker Hub
-  # # #         run: |
-  # # #           echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+  # #       - name: Login to Docker Hub
+  # #         run: |
+  # #           echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
 
-  # # #       - name: Pull latest image
-  # # #         run: docker pull ${{ env.REGISTRY }}:${{ github.sha }}
+  # #       - name: Pull latest image
+  # #         run: docker pull ${{ env.REGISTRY }}:${{ github.sha }}
 
-  # # #       - name: Deploy with docker-compose
-  # # #         run: |
-  # # #           docker-compose down
-  # # #           docker-compose up -d
-  # # #         env:
-  # # #           DOCKER_IMAGE: ${{ env.REGISTRY }}:${{ github.sha }}
+  # #       - name: Deploy with docker-compose
+  # #         run: |
+  # #           docker-compose down
+  # #           docker-compose up -d
+  # #         env:
+  # #           DOCKER_IMAGE: ${{ env.REGISTRY }}:${{ github.sha }}
