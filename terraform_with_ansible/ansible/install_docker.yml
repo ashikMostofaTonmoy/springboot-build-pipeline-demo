@@ -262,7 +262,7 @@
               - "PyPI"
             aliasSyncEnabled: true
             incrementalMirroringEnabled: true
-        status_code: [200, 204]
+        status_code: [200, 204, 304]
       when: dtrack_login.status == 200
 
     - name: Disable BOM validation (allows Trivy CycloneDX SBOM uploads)
