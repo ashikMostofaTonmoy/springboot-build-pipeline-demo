@@ -1,77 +1,128 @@
+# Spring Boot DevSecOps CI/CD Pipeline Demo
 
-<html><body><h1 style="font-size:50px;color:blue;">WEZVA TECHNOLOGIES (ADAM) | <font style="color:red;"> www.wezva.com | <font style="color:green;"> +91-9739110917 </h1>
-<h1> Subscribe to our youtube channel: 
-<a href="https://www.youtube.com/c/DevOpsLearnEasy">https://www.youtube.com/c/DevOpsLearnEasy</a> </h1>
-</body></html>
+A Spring Boot application demonstrating a production-grade DevSecOps pipeline using GitHub Actions. Covers secret scanning, SCA, SAST, code coverage, container image scanning, and quality gates.
 
+## Pipeline Overview
 
-# PRODUCTION GRADE DEVSECOPS CICD Pipeline
-
-## Prereq: Create 2 EC2 servers
-- [ ] Build server with 15GB storage - t2.mirco
-- [ ] Sonarqube server with 4 GB memory - t2.medium
-
-## Step 1: Ensure all the necessary plugins are installed in Jenkins Master
-- [ ] Parameterized trigger plugin
-- [ ] Gitlab plugin
-- [ ] Docker Pipeline
-- [ ] Pipeline: AWS steps
-- [ ] SonarQube Scanner
-- [ ] Quality Gates
-
-## Step 2: Install Docker, Java8, Java11 & Trivy on Build Server
 ```
-$ sudo ./setup.sh
+checkout → build → dependency-track ─┐
+                                      ├→ code-coverage → sonarqube → quality-gate → build-docker → scan-image → smoke-test
+                                      └─────────────────────────────────────────────────────────────────────────────────────
 ```
 
-## Step 3: Install Sonrqube on the t2.medium server
-```
-$ sudo apt update
-$ sudo apt install -y docker.io
-$ sudo usermod -a -G docker ubuntu
-$ sudo docker run -d --name sonar -p 9000:9000 sonarqube:lts-community
-```
+| Stage | Tool | Purpose |
+| --- | --- | --- |
+| `checkout` | Gitleaks | Secret scanning on git history |
+| `build` | Maven | Compile + package (Java 8) |
+| `dependency-track` | cdxgen + DependencyTrack | Generate source BOM, upload for SCA |
+| `code-coverage` | JaCoCo | Test coverage report |
+| `sonarqube-analysis` | SonarQube | SAST + coverage analysis |
+| `quality-gate` | SonarQube | Block pipeline on quality failure |
+| `build-docker` | Docker | Multi-stage image build → push to Docker Hub |
+| `scan-image` | Trivy + DependencyTrack | Container SBOM generation, image SCA |
+| `smoke-test` | curl | HTTP 200 check against running container |
 
-## Step 4: Add necessary credentials
-- [ ] Generate Sonarqube token of type "global analysis token" and add it as Jenkins credential of type "secret text"
-- [ ] Add dockerhub credentials as username/password type
-- [ ] Add Gitlab credentials 
-- [ ] Add Build server credentials for Jenkins master to connect
+## Required Secrets & Variables
 
-## Step 5: Enable Sonarqube webhook for Quality Gates & Install dependency-check plugin
-- [ ] Generate webhook & add the Jenkins URL as follows - http://URL:8080/sonarqube-webhook/
+### GitHub Secrets
 
+| Name | Description |
+| --- | --- |
+| `SONAR_TOKEN` | SonarQube analysis token |
+| `OWASP_DTRACK_KEY` | DependencyTrack API key |
+| `DOCKER_USERNAME` | Docker Hub username |
+| `DOCKER_PASSWORD` | Docker Hub password |
 
+### GitHub Variables
 
-# some changes  for demo
+| Name | Example |
+| --- | --- |
+| `SONAR_HOST_URL` | `https://sonarqube.grabinsight.com` |
+| `OWASP_DTRACK_HOST_URL` | `dtrackapi.grabinsight.com` |
 
-# Pre commit hook
-vi .git/hooks/pre-commit-gitleaks
-chmod +x .git/hooks/pre-commit-gitleaks
-on Linux or wsl
+## Infrastructure Setup
 
-```sh
-docker pull zricethezav/gitleaks:latest
-docker run --rm -v "D:\Tonmoy\ostad\springboot-build-pipeline-demo:/path" zricethezav/gitleaks:latest detect --source="/path" --verbose
-```
+SonarQube and DependencyTrack are deployed via Ansible to an EC2 instance.
 
-for linux 
-```sh
-#!/bin/bash
-
-docker pull zricethezav/gitleaks:latest
-docker run --rm -v "/mnt/d/Tonmoy/ostad/springboot-build-pipeline-demo:/path" zricethezav/gitleaks:latest detect --source="/path" --verbose
-```
-```sh
-docker pull zricethezav/gitleaks:latest
-export path_to_host_folder_to_scan="/mnt/d/Tonmoy/ostad/security/springboot-build-pipeline"
-docker run --rm -v ${path_to_host_folder_to_scan}:/path zricethezav/gitleaks:latest detect --source="/path" --verbose
+```bash
+cd terraform_with_ansible/ansible
+ansible-playbook -i inventory install_docker.yml \
+  -e "vault_dtrack_admin_password=YourPassword123!"
 ```
 
-on windows
-```sh
-docker pull zricethezav/gitleaks:latest
-docker run --rm -v "D:\Tonmoy\ostad\security\springboot-build-pipeline:/path" zricethezav/gitleaks:latest detect --source="/path" --verbose
+The playbook automatically:
+
+- Installs Docker + nginx
+- Deploys SonarQube (docker-compose)
+- Deploys DependencyTrack v5 with PostgreSQL (docker-compose)
+- Enables OSV vulnerability source (Maven, Go, npm, PyPI)
+- Disables strict BOM validation (required for Trivy CycloneDX uploads)
+- Triggers initial OSV mirror
+
+### Services
+
+| Service | URL |
+| --- | --- |
+| SonarQube | `https://sonarqube.grabinsight.com` |
+| DependencyTrack UI | `https://dtrack.grabinsight.com` |
+| DependencyTrack API | `https://dtrackapi.grabinsight.com` |
+
+## Application
+
+Spring Boot REST API (Java 8, Maven) — car/driver management with JPA + H2.
+
+```bash
+# Run locally
+mvn clean package
+java -jar target/*.jar
+
+# Build Docker image
+docker build -t springboot-demo .
+docker run -p 8080:8080 springboot-demo
 ```
 
+Smoke test: `./check.sh` — checks HTTP 200 on port 8080.
 
+## Local Secret Scanning (Pre-commit)
+
+```bash
+# Install pre-commit hook
+cp .git/hooks/pre-commit-gitleaks .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+
+# Run manually
+docker run --rm -v "$(pwd):/path" zricethezav/gitleaks:latest detect --source="/path" --verbose
+```
+
+## DependencyTrack Notes
+
+- **Source BOM**: generated by `cdxgen-java11:v12` from Maven dependencies
+- **Image BOM**: generated by Trivy in CycloneDX format from built Docker image
+- OSV mirror (~200k advisories) runs on first deployment and then daily
+- CVEs appear in DependencyTrack after OSV mirror completes (~15-30 min on fresh install)
+
+### OSV Vulnerability Source (required for Maven CVEs)
+
+NVD only matches via CPE. Maven PURLs from cdxgen have no CPEs → zero NVD hits. OSV matches by PURL/ecosystem → correct for Maven.
+
+**Ansible (automatic):** The playbook enables OSV and triggers mirror on fresh deploy — no manual step needed.
+
+**Manual setup (skip if using Ansible):**
+
+1. Admin → Analyzers → Internal Analyzer → enable **OSV**
+2. Select ecosystems: `Maven` (minimum), add Go/npm/PyPI as needed
+3. Save → Administration → Vulnerability Sources → OSV → **Trigger Mirror**
+4. Wait ~15-30 min for mirror to complete
+
+Or via API:
+
+```bash
+# Enable OSV
+curl -X PUT -H "X-Api-Key: $DTRACK_KEY" -H "Content-Type: application/json" \
+  -d '{"config":{"dataUrl":"https://storage.googleapis.com/osv-vulnerabilities","enabled":true,"ecosystems":["Maven"],"aliasSyncEnabled":true,"incrementalMirroringEnabled":true}}' \
+  "https://dtrackapi.grabinsight.com/api/v2/extension-points/vuln-data-source/extensions/osv/config"
+
+# Trigger mirror
+curl -X POST -H "X-Api-Key: $DTRACK_KEY" \
+  "https://dtrackapi.grabinsight.com/api/v2/vuln-data-sources/osv/mirror-runs"
+```
