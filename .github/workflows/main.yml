@@ -56,7 +56,7 @@ jobs:
         with:
           serverhostname: "${{ vars.OWASP_DTRACK_HOST_URL }}"
           apikey: ${{ secrets.OWASP_DTRACK_KEY }}
-          projectname: springboot-build-pipeline"
+          projectname: springboot-build-pipeline
           projectversion: "${{ github.sha }}-app"
           bomfilename: "bom.json"
           autocreate: true
@@ -273,7 +273,7 @@ jobs:
         with:
           serverhostname: "${{ vars.OWASP_DTRACK_HOST_URL }}"
           apikey: ${{ secrets.OWASP_DTRACK_KEY }}
-          projectname: springboot-build-pipeline"
+          projectname: springboot-build-pipeline
           projectversion: "${{ github.sha }}-image"
           bomfilename: "sbom.json"
           autocreate: true
