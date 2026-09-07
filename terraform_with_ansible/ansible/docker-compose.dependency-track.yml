@@ -9,7 +9,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 2g
+          memory: 3g
     environment:
       DT_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/dtrack"
       DT_DATASOURCE_USERNAME: "dtrack"
